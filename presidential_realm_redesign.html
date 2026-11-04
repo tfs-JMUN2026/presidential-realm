@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Presidential Realm — World Strategy Simulator</title>
+<link rel="preconnect" href="https://unpkg.com">
+<link rel="preconnect" href="https://{s}.tile.openstreetmap.org">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--bg:#0b1220;--panel:#111d30;--panel2:#17263c;--line:#293b55;--gold:#e2b65e;--gold2:#f3d58f;--text:#e9eff8;--muted:#94a5bc;--green:#55c58a;--red:#e87878;--blue:#65a9e8}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 Inter,Segoe UI,Arial,sans-serif}
+button,input,select,textarea{font:inherit}button{cursor:pointer;border:1px solid var(--line);background:#1a2b43;color:var(--text);padding:9px 12px;border-radius:7px}button:hover{border-color:var(--gold);color:var(--gold2)}button.primary{background:linear-gradient(135deg,#c99b43,#edca78);color:#182235;border:0;font-weight:800}button.danger{border-color:#7b454c;color:#ffaaaa}button:disabled{opacity:.4;cursor:not-allowed}
+.top{height:64px;background:#0e192a;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:18px;padding:0 18px;position:sticky;top:0;z-index:1000}
+.brand{font-weight:900;letter-spacing:1.5px;color:var(--gold2);font-size:17px;white-space:nowrap}.brand small{display:block;color:var(--muted);font-size:9px;letter-spacing:2px;font-weight:600}
+.stats{display:flex;gap:9px;flex:1;overflow:auto}.stat{background:#15243a;border:1px solid #263952;padding:6px 10px;border-radius:7px;min-width:95px}.stat span{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.8px}.stat b{font-size:14px}
+.turnbox{display:flex;align-items:center;gap:10px;white-space:nowrap}.turnbox strong{color:var(--gold2)}
+.shell{display:grid;grid-template-columns:205px minmax(360px,1fr) 300px;min-height:calc(100vh - 64px)}
+.sidebar{background:#0e192a;border-right:1px solid var(--line);padding:15px 10px}.navlabel{font-size:10px;color:#7388a4;letter-spacing:1.6px;margin:14px 10px 7px;text-transform:uppercase}.nav{width:100%;display:flex;align-items:center;gap:11px;text-align:left;background:transparent;border:1px solid transparent;padding:10px;border-radius:7px;color:#b7c4d5}.nav .ico{width:20px;text-align:center;color:var(--gold)}.nav.active{background:#1b2b42;border-color:#334761;color:#fff}.nav:hover{background:#17263b}
+main{min-width:0;padding:16px;background:#0b1422}.right{background:#0e192a;border-left:1px solid var(--line);padding:14px;min-width:0}
+.pagehead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:13px}.eyebrow{font-size:10px;color:var(--gold);letter-spacing:1.7px;text-transform:uppercase}.pagehead h1{margin:2px 0;font-size:23px}.sub{color:var(--muted);font-size:12px}
+.mapwrap{height:min(65vh,620px);min-height:390px;border:1px solid #30435d;border-radius:10px;overflow:hidden;position:relative;background:#0a1a2a}.maptop{position:absolute;z-index:500;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;pointer-events:none}.maptop>*{pointer-events:auto}.maptag{background:#0d1a2be8;border:1px solid #3a506b;border-radius:6px;padding:7px 10px;font-size:11px;color:#d7e2ef}.maptag b{color:var(--gold2)}#worldmap{height:100%;width:100%;background:#0b1b2c}.leaflet-container{font:inherit}.leaflet-control-zoom a{background:#15243a!important;color:#fff!important;border-color:#40536b!important}.leaflet-control-attribution{background:#101c2bcc!important;color:#8fa2ba!important}.leaflet-control-attribution a{color:#b8c8dc!important}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#14243a;color:#fff}.leaflet-popup-content{margin:10px}
+.card{background:linear-gradient(180deg,#142239,#101b2c);border:1px solid var(--line);border-radius:9px;padding:13px;margin-bottom:12px}.card h3{font-size:13px;margin:0 0 10px;color:#e8d5a7;letter-spacing:.4px}.country-title{font-size:19px;font-weight:800}.country-meta{color:var(--muted);font-size:11px;margin-top:2px}.metricgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.metric{background:#0e1a2b;border:1px solid #263a53;border-radius:7px;padding:9px}.metric span{display:block;color:var(--muted);font-size:10px;text-transform:uppercase}.metric b{font-size:16px}.bar{height:6px;background:#26374d;border-radius:8px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--green);border-radius:8px}
+.tag{display:inline-block;padding:3px 7px;border-radius:20px;background:#24354c;color:#c5d4e6;font-size:10px;margin:2px}.tag.gold{background:#493b20;color:#f4d58e}.small{font-size:11px;color:var(--muted)}.row{display:flex;justify-content:space-between;gap:8px;align-items:center}.row+.row{margin-top:8px}.actiongrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.actiongrid button{font-size:11px;padding:8px 6px}
+.panelgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.wide{grid-column:1/-1}.field{margin:9px 0}.field label{display:block;color:var(--muted);font-size:11px;margin-bottom:5px}.field input,.field select,.field textarea{width:100%;background:#0b1727;color:#edf3fa;border:1px solid #344963;border-radius:6px;padding:9px}.field input[type=range]{padding:0}.data-table{width:100%;border-collapse:collapse;font-size:12px}.data-table th,.data-table td{text-align:left;border-bottom:1px solid #293b52;padding:9px 7px}.data-table th{color:#9fb0c4;font-size:10px;text-transform:uppercase}.good{color:var(--green)}.bad{color:var(--red)}.goldtext{color:var(--gold2)}
+.newsitem{border-bottom:1px solid #26374d;padding:9px 0;font-size:11px}.newsitem:last-child{border:0}.newsitem b{display:block;color:#e4d2a8;margin-bottom:3px}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1d3049;border:1px solid #526a86;color:white;padding:11px 16px;border-radius:8px;z-index:3000;box-shadow:0 8px 28px #0008;display:none}
+.modalback{position:fixed;inset:0;background:#0009;z-index:2500;display:none;align-items:center;justify-content:center;padding:15px}.modal{width:min(520px,100%);background:#142239;border:1px solid #50647d;border-radius:12px;padding:18px;box-shadow:0 20px 60px #0009}.modal h2{margin:0 0 10px;color:var(--gold2)}
+.empty{padding:25px;text-align:center;color:var(--muted);border:1px dashed #34465d;border-radius:8px}
+.progress{height:7px;background:#26374d;border-radius:9px;overflow:hidden}.progress i{display:block;height:100%;background:linear-gradient(90deg,#b88936,#f1d28a)}
+footer{font-size:10px;color:#7388a4;margin-top:16px;text-align:center}
+@media(max-width:1050px){.shell{grid-template-columns:175px minmax(320px,1fr)}.right{grid-column:1/-1;border-left:0;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.right .card{margin:0}.stats .stat:nth-child(n+5){display:none}}
+@media(max-width:700px){.top{height:auto;min-height:60px;flex-wrap:wrap;padding:9px}.stats{order:3;flex-basis:100%}.shell{display:block}.sidebar{display:flex;overflow:auto;padding:6px;position:sticky;top:90px;z-index:900}.navlabel{display:none}.nav{width:auto;white-space:nowrap;padding:8px}.nav .ico{display:none}main{padding:10px}.right{display:block;padding:10px}.right .card{margin-bottom:10px}.mapwrap{height:52vh;min-height:330px}.panelgrid{grid-template-columns:1fr}.wide{grid-column:auto}}
+</style>
+</head>
+<body>
+<header class="top">
+ <div class="brand">PRESIDENTIAL REALM<small>WORLD STRATEGY SIMULATOR</small></div>
+ <div class="stats">
+  <div class="stat"><span>Treasury</span><b id="topMoney">$85.0B</b></div>
+  <div class="stat"><span>GDP</span><b id="topGDP">$1.42T</b></div>
+  <div class="stat"><span>Approval</span><b id="topApproval">61%</b></div>
+  <div class="stat"><span>Population</span><b id="topPop">67.8M</b></div>
+  <div class="stat"><span>Stability</span><b id="topStability">74%</b></div>
+ </div>
+ <div class="turnbox"><span class="small">CAMPAIGN</span><strong id="turnLabel">Turn 1 · Jan 2026</strong><button class="primary" onclick="nextTurn()">End Turn →</button></div>
+</header>
+<div class="shell">
+ <aside class="sidebar">
+  <div class="navlabel">National command</div>
+  <button class="nav active" data-page="world"><span class="ico">◎</span>World map</button>
+  <button class="nav" data-page="overview"><span class="ico">▦</span>National overview</button>
+  <button class="nav" data-page="government"><span class="ico">♜</span>Government</button>
+  <button class="nav" data-page="economy"><span class="ico">◈</span>Economy & budget</button>
+  <button class="nav" data-page="parliament"><span class="ico">▤</span>Parliament</button>
+  <div class="navlabel">Foreign affairs</div>
+  <button class="nav" data-page="diplomacy"><span class="ico">◇</span>Diplomacy</button>
+  <button class="nav" data-page="trade"><span class="ico">⇄</span>Trade & resources</button>
+  <button class="nav" data-page="territories"><span class="ico">⌖</span>Territories</button>
+  <div class="navlabel">National services</div>
+  <button class="nav" data-page="defence"><span class="ico">⬡</span>Defence</button>
+  <button class="nav" data-page="research"><span class="ico">⌘</span>Research</button>
+  <button class="nav" data-page="events"><span class="ico">◷</span>World events</button>
+  <div class="navlabel">Presidential office</div>
+  <button class="nav" data-page="palace"><span class="ico">⌂</span>Presidential palace</button>
+  <button class="nav" data-page="save"><span class="ico">▣</span>Save & settings</button>
+ </aside>
+ <main>
+  <div class="pagehead"><div><div class="eyebrow" id="eyebrow">Global intelligence</div><h1 id="pageTitle">World map</h1><div class="sub" id="pageSub">Select a country to inspect its profile and conduct foreign affairs.</div></div><div><span class="tag gold">SINGLE PLAYER</span><span class="tag">AUTOSAVE</span></div></div>
+  <section id="page-world">
+   <div class="mapwrap"><div class="maptop"><div class="maptag">WORLD INTELLIGENCE · <b>SELECT A COUNTRY</b></div><div class="maptag" id="mapStatus">Loading country borders…</div></div><div id="worldmap"></div></div>
+   <div class="row" style="margin-top:10px"><span class="small">Map data: Natural Earth country boundaries · Map tiles © OpenStreetMap contributors</span><button onclick="resetMap()">Reset map view</button></div>
+  </section>
+  <section id="page-overview" hidden></section><section id="page-government" hidden></section><section id="page-economy" hidden></section><section id="page-parliament" hidden></section><section id="page-diplomacy" hidden></section><section id="page-trade" hidden></section><section id="page-territories" hidden></section><section id="page-defence" hidden></section><section id="page-research" hidden></section><section id="page-events" hidden></section><section id="page-palace" hidden></section><section id="page-save" hidden></section>
+ </main>
+ <aside class="right">
+  <div class="card" id="selectedCard">
+   <h3>COUNTRY INTELLIGENCE</h3><div class="country-title" id="countryName">India</div><div class="country-meta" id="countryMeta">South Asia · Your nation</div>
+   <div class="metricgrid" style="margin-top:12px">
+    <div class="metric"><span>Population</span><b id="cPop">67.8M</b></div><div class="metric"><span>GDP</span><b id="cGDP">$1.42T</b></div>
+    <div class="metric"><span>Approval</span><b id="cApproval">61%</b><div class="bar"><i id="approvalBar" style="width:61%"></i></div></div><div class="metric"><span>Stability</span><b id="cStability">74%</b><div class="bar"><i id="stabilityBar" style="width:74%"></i></div></div>
+   </div>
+   <div class="row" style="margin-top:11px"><span class="small">Government</span><b id="cGov">Federal Republic</b></div>
+   <div class="row"><span class="small">Relations</span><b id="cRelation">Home country</b></div>
+   <div class="actiongrid" style="margin-top:12px"><button onclick="goPage('diplomacy')">Diplomacy</button><button onclick="goPage('trade')">Trade</button></div>
+  </div>
+  <div class="card"><h3>PRESIDENTIAL BRIEFING</h3><div id="briefing" class="small">Your administration has taken office. Review the national situation and set your priorities.</div></div>
+  <div class="card"><h3>WORLD DESK</h3><div id="sideNews"></div><button style="width:100%;margin-top:8px" onclick="goPage('events')">Open world desk</button></div>
+  <div class="card"><h3>QUICK ACTIONS</h3><div class="actiongrid"><button onclick="goPage('government')">Cabinet</button><button onclick="goPage('economy')">Budget</button><button onclick="goPage('parliament')">New bill</button><button onclick="saveGame()">Save game</button></div></div>
+ </aside>
+</div>
+<div class="toast" id="toast"></div>
+<div class="modalback" id="modalBack"><div class="modal" id="modal"></div></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const fmtB=n=>n>=1000?'$'+(n/1000).toFixed(2)+'T':'$'+n.toFixed(1)+'B';
+const fmtPop=n=>n>=1000?(n/1000).toFixed(2)+'B':n.toFixed(1)+'M';
+const regions=['North America','South America','Europe','Africa','Asia','Oceania','Middle East','Central America'];
+const countrySeed={
+ India:{pop:1428,gdp:3567,approval:61,stability:74,gov:'Federal Republic',region:'South Asia',relation:'Home country',power:72},
+ United_States:{pop:334,gdp:27360,approval:54,stability:82,gov:'Federal Republic',region:'North America',relation:'Strategic partner',power:95},
+ China:{pop:1412,gdp:17700,approval:68,stability:85,gov:'One-party state',region:'East Asia',relation:'Major power',power:92},
+ Russia:{pop:144,gdp:2021,approval:59,stability:71,gov:'Federal Republic',region:'Eastern Europe / North Asia',relation:'Major power',power:83},
+ United_Kingdom:{pop:68,gdp:3340,approval:57,stability:79,gov:'Constitutional Monarchy',region:'Europe',relation:'Partner',power:68},
+ France:{pop:68,gdp:3050,approval:58,stability:78,gov:'Semi-presidential Republic',region:'Europe',relation:'Partner',power:69},
+ Germany:{pop:84,gdp:4450,approval:60,stability:86,gov:'Federal Republic',region:'Europe',relation:'Partner',power:72},
+ Japan:{pop:124,gdp:4210,approval:62,stability:88,gov:'Constitutional Monarchy',region:'East Asia',relation:'Partner',power:70},
+ Brazil:{pop:216,gdp:2170,approval:55,stability:68,gov:'Federal Republic',region:'South America',relation:'Neutral',power:62},
+ Canada:{pop:40,gdp:2140,approval:64,stability:90,gov:'Federal Parliamentary Democracy',region:'North America',relation:'Partner',power:63},
+ Australia:{pop:27,gdp:1720,approval:63,stability:89,gov:'Federal Parliamentary Democracy',region:'Oceania',relation:'Partner',power:61},
+ Pakistan:{pop:241,gdp:338,approval:48,stability:54,gov:'Federal Republic',region:'South Asia',relation:'Neighbour',power:59},
+ Bangladesh:{pop:173,gdp:437,approval:56,stability:62,gov:'Parliamentary Republic',region:'South Asia',relation:'Neighbour',power:42},
+ Indonesia:{pop:277,gdp:1370,approval:66,stability:76,gov:'Presidential Republic',region:'Southeast Asia',relation:'Regional partner',power:57},
+ South_Africa:{pop:60,gdp:380,approval:49,stability:57,gov:'Parliamentary Republic',region:'Southern Africa',relation:'Neutral',power:48},
+ Mexico:{pop:129,gdp:1790,approval:52,stability:64,gov:'Federal Republic',region:'North America',relation:'Neutral',power:60},
+ Italy:{pop:59,gdp:2250,approval:58,stability:80,gov:'Parliamentary Republic',region:'Europe',relation:'Partner',power:62},
+ Saudi_Arabia:{pop:37,gdp:1060,approval:72,stability:82,gov:'Monarchy',region:'Middle East',relation:'Regional partner',power:65},
+ Turkey:{pop:85,gdp:1110,approval:51,stability:66,gov:'Presidential Republic',region:'West Asia',relation:'Regional power',power:64},
+ Ukraine:{pop:37,gdp:180,approval:63,stability:49,gov:'Semi-presidential Republic',region:'Eastern Europe',relation:'Diplomatic contact',power:54},
+ Egypt:{pop:112,gdp:398,approval:55,stability:67,gov:'Presidential Republic',region:'North Africa',relation:'Regional partner',power:52}
+};
+const state={
+ country:'India',turn:1,month:0,year:2026,money:85,gdp:1420,pop:67.8,approval:61,stability:74,
+ tax:22,spending:76,health:15,education:16,infrastructure:18,industry:12,security:15,treasuryDelta:0,
+ president:'President Pranav',party:'National Development Party',term:1,minister:{Finance:'Aarav Mehta',Foreign:'Mira Sen',Interior:'Kabir Rao',Defence:'Dev Malhotra',Education:'Ananya Iyer'},
+ bills:[{name:'National Infrastructure Renewal Act',status:'In committee',support:62},{name:'Digital Public Services Bill',status:'Passed',support:76}],
+ relations:{},treaties:[],tradeDeals:[],territories:[],research:[{name:'Clean Energy Grid',progress:34,cost:8},{name:'Advanced Public Health',progress:12,cost:6}],
+ defence:{readiness:72,personnel:520,modernisation:42},news:[],events:[],selected:'India',mapReady:false,
+ stats:{industry:64,employment:71,education:68,health:72},lastEvent:'Administration formed; your first presidential briefing is ready.'
+};
+let map,geoLayer,geoData;
+function countryName(p){return p.ADMIN||p.name||p.NAME||'Unknown country'}
+function countryKey(n){return n.replaceAll(' ','_').replaceAll('-','_')}
+function profile(n){
+ let k=countryKey(n),base=countrySeed[k]||countrySeed[n]||null;
+ if(!base){let h=0;for(let c of n)h=(h*31+c.charCodeAt(0))>>>0;let pop=8+(h%220),gdp=60+(h%1800);base={pop,gdp,approval:45+h%30,stability:50+h%38,gov:'National Government',region:regions[h%regions.length],relation:'Neutral',power:35+h%45};}
+ return base;
+}
+function notify(s){let t=$('toast');t.textContent=s;t.style.display='block';clearTimeout(notify.timer);notify.timer=setTimeout(()=>t.style.display='none',2600)}
+function logNews(head,body){state.news.unshift({turn:state.turn,head,body});state.news=state.news.slice(0,30);renderNews()}
+function renderNews(){let html=state.news.slice(0,4).map(n=>`<div class="newsitem"><b>${n.head}</b>${n.body}<div class="small">Turn ${n.turn}</div></div>`).join('');$('sideNews').innerHTML=html||'<div class="small">No new reports.</div>'}
+function updateTop(){
+ $('topMoney').textContent=fmtB(state.money);$('topGDP').textContent=fmtB(state.gdp);$('topApproval').textContent=state.approval+'%';$('topPop').textContent=fmtPop(state.pop);$('topStability').textContent=state.stability+'%';
+ let months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];$('turnLabel').textContent=`Turn ${state.turn} · ${months[state.month]} ${state.year}`;
+}
+function selectCountry(n){
+ state.selected=n;let p=profile(n);$('countryName').textContent=n;$('countryMeta').textContent=p.region+' · '+(n===state.country?'Your nation':'Foreign intelligence');
+ $('cPop').textContent=fmtPop(p.pop);$('cGDP').textContent=fmtB(p.gdp);$('cApproval').textContent=p.approval+'%';$('cStability').textContent=p.stability+'%';$('approvalBar').style.width=p.approval+'%';$('stabilityBar').style.width=p.stability+'%';$('cGov').textContent=p.gov;$('cRelation').textContent=n===state.country?'Home country':(state.relations[n]||p.relation);
+ if(n===state.country){$('briefing').textContent=`Your administration governs ${n}. Approval is ${state.approval}%, stability is ${state.stability}%, and the treasury holds ${fmtB(state.money)}.`}
+ else $('briefing').textContent=`${n} is a ${p.gov.toLowerCase()} in ${p.region}. Its estimated GDP is ${fmtB(p.gdp)}. Choose diplomacy or trade to build relations.`;
+ if(geoLayer)geoLayer.setStyle(f=>styleFeature(f));
+}
+function styleFeature(f){
+ let n=countryName(f.properties);let selected=n===state.selected,home=n===state.country;
+ return {color:selected?'#ffe29a':'#52677f',weight:selected?2.3:.8,fillColor:home?'#b98c3c':selected?'#d1a958':'#29435e',fillOpacity:home?.82:selected?.8:.66};
+}
+function initMap(){
+ if(!window.L){$('mapStatus').textContent='Map library unavailable';return}
+ map=L.map('worldmap',{worldCopyJump:true,minZoom:1,maxZoom:7,zoomControl:true}).setView([22,15],2);
+ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:7,attribution:'© OpenStreetMap contributors'}).addTo(map);
+ const url='https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson';
+ fetch(url).then(r=>{if(!r.ok)throw Error('Country boundary download failed');return r.json()}).then(data=>{
+  geoData=data;geoLayer=L.geoJSON(data,{style:styleFeature,onEachFeature:(f,l)=>{
+   let n=countryName(f.properties);l.on({click:()=>{selectCountry(n);notify(n+' selected')}});l.bindTooltip(n,{sticky:true});
+  }}).addTo(map);$('mapStatus').textContent=data.features.length+' countries mapped';state.mapReady=true;selectCountry(state.country);
+ }).catch(e=>{$('mapStatus').textContent='Country map unavailable — check internet';notify('The interactive country layer could not load. Other game screens remain available.')});
+}
+function resetMap(){if(map)map.setView([22,15],2)}
+const pages={
+ world:['Global intelligence','World map','Select a country to inspect its profile and conduct foreign affairs.'],
+ overview:['National command','National overview','Your country at a glance: performance, public services and national priorities.'],
+ government:['Executive office','Government','Manage the cabinet and assign responsibilities to ministers.'],
+ economy:['Treasury department','Economy & budget','Set fiscal policy and direct national investment.'],
+ parliament:['Legislative affairs','Parliament','Introduce bills, build support and pass legislation.'],
+ diplomacy:['Foreign ministry','Diplomacy','Build relations, negotiate agreements and manage international affairs.'],
+ trade:['Commerce department','Trade & resources','Create trade agreements and strengthen the economy through cooperation.'],
+ territories:['Territorial administration','Territories','Administer overseas territories and appoint civilian governors.'],
+ defence:['National security','Defence','Manage readiness, service investment and high-level national security.'],
+ research:['Science & innovation','Research','Fund research programmes and improve national capabilities.'],
+ events:['Situation room','World events','Review reports, decisions and developments across the world.'],
+ palace:['Executive residence','Presidential palace','The seat of government: offices, meeting rooms and official business.'],
+ save:['Campaign management','Save & settings','Save your campaign locally or start a new administration.']
+};
+function goPage(p){
+ document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.page===p));
+ Object.keys(pages).forEach(k=>{$('page-'+k).hidden=k!==p});
+ $('eyebrow').textContent=pages[p][0];$('pageTitle').textContent=pages[p][1];$('pageSub').textContent=pages[p][2];
+ if(p!=='world')renderPage(p);
+}
+document.querySelectorAll('.nav').forEach(b=>b.addEventListener('click',()=>goPage(b.dataset.page)));
+function card(title,body,cls=''){return `<div class="card ${cls}"><h3>${title}</h3>${body}</div>`}
+function btn(label,fn,cls=''){return `<button class="${cls}" onclick="${fn}">${label}</button>`}
+function renderPage(p){
+ const el=$('page-'+p);
+ if(p==='overview')el.innerHTML=`<div class="panelgrid">
+ ${card('NATIONAL PERFORMANCE',`<div class="metricgrid">${metric('GDP',fmtB(state.gdp))}${metric('Treasury',fmtB(state.money))}${metric('Approval',state.approval+'%')}${metric('Stability',state.stability+'%')}</div>`)}
+ ${card('PUBLIC SERVICES',`<div class="row"><span>Healthcare</span><b>${state.stats.health}%</b></div><div class="progress"><i style="width:${state.stats.health}%"></i></div><div class="row" style="margin-top:10px"><span>Education</span><b>${state.stats.education}%</b></div><div class="progress"><i style="width:${state.stats.education}%"></i></div><div class="row" style="margin-top:10px"><span>Infrastructure</span><b>${state.stats.industry}%</b></div><div class="progress"><i style="width:${state.stats.industry}%"></i></div>`)}
+ ${card('PRESIDENTIAL PRIORITIES',`<p class="small">Choose a priority to influence your next term's national development.</p><div class="actiongrid">${btn('Jobs & industry',"priority('industry')")}${btn('Education',"priority('education')")}${btn('Healthcare',"priority('health')")}${btn('Infrastructure',"priority('infrastructure')")}</div>`)}
+ ${card('NATIONAL PROFILE',`<p><span class="tag gold">${state.country}</span><span class="tag">Federal system</span><span class="tag">Single-player campaign</span></p><p class="small">Population: ${fmtPop(state.pop)} · Government: Presidential administration · Current term: ${state.term}</p>`)}
+ </div>`;
+ if(p==='government')el.innerHTML=`<div class="panelgrid">${card('OFFICE OF THE PRESIDENT',`<div class="country-title">${state.president}</div><p class="small">Party: ${state.party} · Presidential term ${state.term}</p><div class="field"><label>Presidential address / policy statement</label><textarea id="address" rows="3" placeholder="Set out the administration's priorities…"></textarea></div>${btn('Deliver address',"deliverAddress()",'primary')}`)}
+ ${card('CABINET OF MINISTERS',`<table class="data-table"><thead><tr><th>Portfolio</th><th>Minister</th><th>Action</th></tr></thead><tbody>${Object.entries(state.minister).map(([k,v])=>`<tr><td>${k}</td><td>${v}</td><td><button onclick="appoint('${k}')">Replace</button></td></tr>`).join('')}</tbody></table>`)}
+ ${card('CIVIL SERVICE',`<p class="small">Departments coordinate policy delivery and report progress to the cabinet. Ministers can be reassigned as your administration changes.</p><span class="tag">5 cabinet portfolios</span><span class="tag">National administration</span>`)}</div>`;
+ if(p==='economy')el.innerHTML=`<div class="panelgrid">${card('FISCAL POSITION',`<div class="metricgrid">${metric('Treasury',fmtB(state.money))}${metric('GDP',fmtB(state.gdp))}${metric('Tax rate',state.tax+'%')}${metric('Monthly balance',(state.treasuryDelta>=0?'+':'')+fmtB(state.treasuryDelta))}</div><div class="field"><label>National tax rate: <b id="taxValue">${state.tax}%</b></label><input id="taxRange" type="range" min="5" max="40" value="${state.tax}" oninput="$('taxValue').textContent=this.value+'%'"></div>${btn('Set tax policy',"setTax()",'primary')}`)}
+ ${card('PUBLIC BUDGET ALLOCATION',`<p class="small">Adjust department spending. Changes take effect at the next turn.</p>${budgetSlider('health','Healthcare',state.health)}${budgetSlider('education','Education',state.education)}${budgetSlider('infrastructure','Infrastructure',state.infrastructure)}${budgetSlider('industry','Industry',state.industry)}${budgetSlider('security','Public safety',state.security)}${btn('Approve budget',"approveBudget()",'primary')}`)}
+ ${card('ECONOMIC PROGRAMMES',`<div class="row"><span>Industrial development</span><b>${state.stats.industry}%</b></div><div class="progress"><i style="width:${state.stats.industry}%"></i></div><p class="small">Investment supports employment, productivity and long-term economic growth.</p>${btn('Launch business incentives',"investment('industry')")}`)}
+ ${card('ECONOMIC OUTLOOK',`<p class="small">Your economy is affected by tax policy, public investment, research and international trade. Very high taxes can reduce approval; underfunded services can weaken stability.</p>`)}</div>`;
+ if(p==='parliament')el.innerHTML=`<div class="panelgrid">${card('NATIONAL PARLIAMENT',`<div class="metricgrid">${metric('Seats', '543')}${metric('Government support','58%')}${metric('Bills pending',state.bills.filter(b=>b.status!=='Passed').length)}${metric('Passed bills',state.bills.filter(b=>b.status==='Passed').length)}</div><p class="small">The legislature reviews proposals, debates policy and votes on bills.</p>${btn('Introduce a bill',"newBill()",'primary')}`)}
+ ${card('LEGISLATIVE AGENDA',`<table class="data-table"><thead><tr><th>Bill</th><th>Status</th><th>Support</th><th></th></tr></thead><tbody>${state.bills.map((b,i)=>`<tr><td>${b.name}</td><td>${b.status}</td><td>${b.support}%</td><td>${b.status==='Passed'?'—':`<button onclick="voteBill(${i})">Vote</button>`}</td></tr>`).join('')}</tbody></table>`)}
+ ${card('PARLIAMENTARY SESSION',`<p class="small">A session can debate pending legislation. Passing a bill requires sufficient support and a functioning treasury.</p>${btn('Convene parliament',"convene()")}`)}</div>`;
+ if(p==='diplomacy'){let n=state.selected===state.country?'United States':state.selected;let rel=state.relations[n]||profile(n).relation;el.innerHTML=`<div class="panelgrid">${card('FOREIGN RELATIONS',`<div class="country-title">${n}</div><p class="small">Current relationship: <b>${rel}</b></p><p class="small">Select any country on the world map first, or use the country selector.</p><div class="field"><label>Choose diplomatic partner</label><select id="dipCountry">${countryOptions(n)}</select></div><div class="actiongrid">${btn('Send ambassador',"diplomatic('ambassador')")}${btn('Propose summit',"diplomatic('summit')")}${btn('Offer cooperation',"diplomatic('cooperation')")}${btn('Issue protest',"diplomatic('protest')")}</div>`)}
+ ${card('INTERNATIONAL AGREEMENTS',`<div>${state.treaties.length?state.treaties.map(t=>`<div class="newsitem"><b>${t.name}</b>${t.partner} · ${t.status}</div>`).join(''):'<div class="empty">No agreements signed yet.</div>'}</div>`)}
+ ${card('DIPLOMATIC PRINCIPLES',`<p class="small">Diplomacy is built through dialogue, cooperation and long-term trust. Decisions can improve or worsen relations with other governments.</p>`)}</div>`}
+ if(p==='trade')el.innerHTML=`<div class="panelgrid">${card('TRADE PARTNER',`<div class="field"><label>Select a country</label><select id="tradeCountry">${countryOptions(state.selected===state.country?'United States':state.selected)}</select></div><div class="field"><label>Agreement type</label><select id="tradeType"><option>Trade partnership</option><option>Technology exchange</option><option>Infrastructure investment</option><option>Agricultural cooperation</option></select></div>${btn('Propose agreement',"proposeTrade()",'primary')}`)}
+ ${card('ACTIVE AGREEMENTS',state.tradeDeals.length?state.tradeDeals.map(t=>`<div class="newsitem"><b>${t.type}</b>${t.partner} · ${t.status}</div>`).join(''):'<div class="empty">No trade agreements are active.</div>')}
+ ${card('NATIONAL RESOURCES',`<div class="metricgrid">${metric('Energy security','Stable')}${metric('Food supply','Adequate')}${metric('Industrial base',state.stats.industry+'%')}${metric('Trade openness','Moderate')}</div>`)}</div>`;
+ if(p==='territories')el.innerHTML=`<div class="panelgrid">${card('TERRITORIAL ADMINISTRATION',`<p class="small">Establish civilian administrations for territories acquired through the campaign's diplomatic and political systems. This is a fictional game mechanic; no real-world annexation is represented.</p><div class="field"><label>Territory name</label><input id="territoryName" placeholder="Name of administered territory"></div><div class="field"><label>Administrator title</label><select id="territoryRole"><option>Governor</option><option>Governor-General</option><option>Viceroy</option></select></div><div class="field"><label>Appointee</label><input id="territoryPerson" placeholder="Administrator's name"></div>${btn('Create administration',"addTerritory()",'primary')}`)}
+ ${card('CURRENT ADMINISTRATIONS',state.territories.length?state.territories.map((t,i)=>`<div class="newsitem"><b>${t.name}</b>${t.role}: ${t.person} ${btn('Dismiss',`dismissTerritory(${i})`)}</div>`).join(''):'<div class="empty">No territories are currently administered.</div>')}</div>`;
+ if(p==='defence')el.innerHTML=`<div class="panelgrid">${card('NATIONAL DEFENCE',`<div class="metricgrid">${metric('Readiness',state.defence.readiness+'%')}${metric('Personnel',state.defence.personnel.toLocaleString())}${metric('Modernisation',state.defence.modernisation+'%')}${metric('Stability',state.stability+'%')}</div><p class="small">This screen models national-level readiness, budgeting and civilian oversight only.</p>`)}
+ ${card('DEFENCE POLICY',`<div class="field"><label>Readiness investment</label><select id="defenceChoice"><option value="8">Standard programme · $8B</option><option value="15">Expanded programme · $15B</option><option value="3">Maintenance programme · $3B</option></select></div>${btn('Approve programme',"defenceInvest()",'primary')}`)}
+ ${card('CIVILIAN OVERSIGHT',`<p class="small">The president and parliament review national security policy, public accountability and emergency preparedness.</p>${btn('Request oversight review',"oversight()")}`)}</div>`;
+ if(p==='research')el.innerHTML=`<div class="panelgrid">${card('RESEARCH & INNOVATION',`<p class="small">Research programmes improve public services and economic productivity over time.</p>${btn('Start research programme',"newResearch()",'primary')}`)}
+ ${card('ACTIVE PROGRAMMES',state.research.map((r,i)=>`<div class="newsitem"><b>${r.name}</b><div class="row"><span>${r.progress}% complete</span><span>$${r.cost}B funding</span></div><div class="progress"><i style="width:${r.progress}%"></i></div><div style="margin-top:6px">${btn('Fund $2B',`fundResearch(${i})`)}</div></div>`).join(''))}</div>`;
+ if(p==='events')el.innerHTML=`<div class="panelgrid">${card('GLOBAL SITUATION ROOM',state.news.length?state.news.map(n=>`<div class="newsitem"><b>${n.head}</b>${n.body}<div class="small">Turn ${n.turn}</div></div>`).join(''):'<div class="empty">No world reports yet. End a turn to advance the campaign.</div>','wide')}
+ ${card('PRESIDENTIAL DECISIONS',`<p class="small">Major decisions arrive as campaign events. Their consequences affect your treasury, public approval, stability and international relations.</p>${btn('Review national briefing',"selectCountry(state.country)")}`)}</div>`;
+ if(p==='palace')el.innerHTML=`<div class="panelgrid">${card('PRESIDENTIAL RESIDENCE',`<div style="height:220px;border-radius:8px;background:linear-gradient(135deg,#1d2c40,#0c1726);border:1px solid #42536a;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px"><div><div style="font-size:42px;color:#d7b56b">♜</div><div class="country-title">THE PRESIDENTIAL HOUSE</div><div class="small">Executive residence · Capital district</div></div></div><p class="small">The palace is currently a room-and-office management prototype. A fully explorable 3D building with a walking avatar, seating and interactive objects is a separate development milestone.</p>`,'wide')}
+ ${card('OFFICIAL ROOMS',`<div class="actiongrid">${btn('President’s office',"palaceRoom('President’s office')")}${btn('Cabinet chamber',"palaceRoom('Cabinet chamber')")}${btn('Parliament hall',"palaceRoom('Parliament hall')")}${btn('Signing room',"palaceRoom('Signing room')")}${btn('Reception hall',"palaceRoom('Reception hall')")}${btn('Situation room',"palaceRoom('Situation room')")}</div>`)}
+ ${card('OFFICIAL DOCUMENTS',`<p class="small">Prepare an official presidential order. It will be recorded in the campaign log.</p><div class="field"><label>Document title</label><input id="docTitle" placeholder="Presidential order"></div><div class="field"><label>Purpose</label><textarea id="docPurpose" rows="2" placeholder="Describe the policy or instruction"></textarea></div>${btn('Prepare and sign',"signDocument()",'primary')}`)}</div>`;
+ if(p==='save')el.innerHTML=`<div class="panelgrid">${card('CAMPAIGN SAVE',`<p class="small">Your campaign is stored in this browser on this device using local storage.</p>${btn('Save campaign now',"saveGame()",'primary')} ${btn('Load saved campaign',"loadGame()")}<p class="small">Browser data clearing may remove this save. It does not sync between devices.</p>`)}
+ ${card('CAMPAIGN SETTINGS',`<div class="row"><span>Campaign</span><b>Presidential Term ${state.term}</b></div><div class="row"><span>Current country</span><b>${state.country}</b></div><div class="row"><span>Turn</span><b>${state.turn}</b></div><hr style="border-color:#293b52">${btn('Start a new campaign',"newCampaign()",'danger')}`)}
+ ${card('HOW TO PLAY',`<ol class="small"><li>Select countries on the world map to inspect them.</li><li>Use the departments to set policy and make agreements.</li><li>Introduce bills and fund research.</li><li>End a turn to process income, policy effects and world events.</li><li>Save your campaign before leaving.</li></ol>`)}</div>`;
+}
+function metric(a,b){return `<div class="metric"><span>${a}</span><b>${b}</b></div>`}
+function budgetSlider(k,label,v){return `<div class="field"><label>${label}: <b id="${k}Value">$${v}B</b></label><input type="range" min="2" max="35" value="${v}" id="${k}Range" oninput="$('${k}Value').textContent='$'+this.value+'B'"></div>`}
+function countryOptions(selected){let names=Object.keys(countrySeed).map(k=>k.replaceAll('_',' '));if(!names.includes(selected))names.unshift(selected);return [...new Set(names)].map(n=>`<option ${n===selected?'selected':''}>${n}</option>`).join('')}
+function setTax(){let v=+$('taxRange').value;state.tax=v;state.approval=Math.max(25,Math.min(90,state.approval+(v<=20?2:v>=30?-3:0)));updateTop();selectCountry(state.country);notify('Tax policy updated to '+v+'%.')}
+function approveBudget(){['health','education','infrastructure','industry','security'].forEach(k=>state[k]=+$ (k+'Range').value);state.spending=state.health+state.education+state.infrastructure+state.industry+state.security;notify('Budget approved. Total allocation: $'+state.spending+'B per turn.');}
+function priority(k){if(k==='industry')state.stats.industry=Math.min(100,state.stats.industry+4);if(k==='education')state.stats.education=Math.min(100,state.stats.education+4);if(k==='health')state.stats.health=Math.min(100,state.stats.health+4);if(k==='infrastructure')state.stats.industry=Math.min(100,state.stats.industry+3);state.money-=2;notify('National priority funded. $2B allocated.');renderPage('overview');updateTop()}
+function investment(k){if(state.money<5)return notify('Insufficient treasury funds.');state.money-=5;state.stats.industry=Math.min(100,state.stats.industry+6);state.gdp+=12;updateTop();notify('Business incentives launched.')}
+function appoint(k){let n=prompt('Enter the new '+k+' Minister’s name:');if(n&&n.trim()){state.minister[k]=n.trim();renderPage('government');logNews('Cabinet appointment',n.trim()+' has been appointed Minister of '+k+'.');}}
+function deliverAddress(){let t=$('address').value.trim();if(!t)return notify('Write an address first.');state.approval=Math.min(95,state.approval+2);logNews('Presidential address',t);updateTop();notify('Address delivered to the nation.')}
+function newBill(){let n=prompt('Enter the name of the proposed bill:');if(n&&n.trim()){state.bills.push({name:n.trim(),status:'Introduced',support:50+Math.floor(Math.random()*20)});renderPage('parliament');notify('Bill introduced in parliament.');}}
+function voteBill(i){let b=state.bills[i];if(b.support>=60){b.status='Passed';state.stability=Math.min(95,state.stability+2);state.approval=Math.min(95,state.approval+1);logNews('Parliament passes legislation',b.name+' has passed with '+b.support+'% support.');}else{b.status='Rejected';state.stability=Math.max(20,state.stability-2);logNews('Parliament rejects bill',b.name+' did not secure enough support.');}renderPage('parliament');updateTop();}
+function convene(){state.bills.filter(b=>b.status==='Introduced'||b.status==='In committee').forEach(b=>b.support=Math.min(90,b.support+5));renderPage('parliament');notify('Parliament has convened. Support for pending bills has shifted.')}
+function diplomatic(action){let n=$('dipCountry').value;if(n===state.country)return notify('Choose a foreign country.');let old=state.relations[n]||profile(n).relation;let map={ambassador:['Diplomatic contact',2,'An ambassadorial mission has been proposed.'],summit:['Dialogue partner',4,'A bilateral summit has been requested.'],cooperation:['Cooperation partner',6,'A cooperation framework has been offered.'],protest:['Strained relations',-5,'A formal diplomatic protest has been issued.']};let [r,delta,msg]=map[action];state.relations[n]=r;logNews('Foreign ministry · '+n,msg);selectCountry(n);renderPage('diplomacy');notify(msg);}
+function proposeTrade(){let n=$('tradeCountry').value,t=$('tradeType').value;if(n===state.country)return notify('Choose a foreign trade partner.');if(state.money<2)return notify('At least $2B is needed to negotiate the agreement.');state.money-=2;state.tradeDeals.push({partner:n,type:t,status:'Proposed'});state.relations[n]='Trade partner';state.gdp+=5;updateTop();renderPage('trade');logNews('Trade proposal',t+' proposed to '+n+'.');notify('Trade proposal sent.');}
+function addTerritory(){let n=$('territoryName').value.trim(),p=$('territoryPerson').value.trim(),r=$('territoryRole').value;if(!n||!p)return notify('Enter a territory and appointee.');state.territories.push({name:n,person:p,role:r});renderPage('territories');logNews('Territorial administration',r+' '+p+' appointed to administer '+n+'.');}
+function dismissTerritory(i){state.territories.splice(i,1);renderPage('territories');notify('Administrator dismissed.')}
+function defenceInvest(){let cost=+$('defenceChoice').value;if(state.money<cost)return notify('Insufficient funds.');state.money-=cost;state.defence.readiness=Math.min(100,state.defence.readiness+(cost===15?8:cost===8?4:1));state.defence.modernisation=Math.min(100,state.defence.modernisation+(cost===15?7:3));updateTop();renderPage('defence');logNews('Defence policy','National readiness programme funded at $'+cost+'B.');}
+function oversight(){state.stability=Math.min(95,state.stability+2);updateTop();notify('Civilian oversight review completed.')}
+function newResearch(){let n=prompt('Name the new research programme:');if(n&&n.trim()){state.research.push({name:n.trim(),progress:0,cost:5});renderPage('research');notify('Research programme established.');}}
+function fundResearch(i){if(state.money<2)return notify('Insufficient funds.');state.money-=2;state.research[i].progress=Math.min(100,state.research[i].progress+20);if(state.research[i].progress===100){state.gdp+=15;state.approval=Math.min(95,state.approval+2);logNews('Research milestone',state.research[i].name+' has reached completion.');}updateTop();renderPage('research');}
+function palaceRoom(n){$('briefing').textContent='You are viewing: '+n+'. Official business can be conducted here.';notify(n+' opened.')}
+function signDocument(){let n=$('docTitle').value.trim(),p=$('docPurpose').value.trim();if(!n||!p)return notify('Complete the document title and purpose.');logNews('Presidential document signed',n+' — '+p);notify('Document signed and entered in the campaign register.')}
+function nextTurn(){
+ state.turn++;state.month++;if(state.month===12){state.month=0;state.year++}
+ let income=state.gdp*.07*(state.tax/22);let expenses=state.spending||76;let trade=state.tradeDeals.length*1.2;let net=income+trade-expenses;state.money+=net;state.treasuryDelta=net;
+ state.gdp+=Math.max(-15,Math.min(45,net*.18+Math.random()*12-3));
+ state.research.forEach(r=>r.progress=Math.min(100,r.progress+4));
+ state.approval=Math.max(20,Math.min(95,state.approval+(net>=0?1:-2)+(state.tax>32?-2:0)));
+ state.stability=Math.max(20,Math.min(96,state.stability+(net>=0?1:-1)));
+ if(Math.random()<.38){let events=[
+ ['Regional economic forum','A regional economic forum has invited your country to discuss cooperation.'],
+ ['Infrastructure report','A national infrastructure review identifies opportunities for improvement.'],
+ ['Public opinion survey','Citizens are debating the administration’s latest policy priorities.'],
+ ['Research milestone','A research team reports progress on a public innovation programme.'],
+ ['International dialogue','Several governments have called for renewed diplomatic dialogue.'],
+ ['Market update','Global market conditions have shifted, affecting trade expectations.']
+ ];let e=events[Math.floor(Math.random()*events.length)];logNews(e[0],e[1]);state.lastEvent=e[1];}
+ if(state.money<0){state.stability=Math.max(15,state.stability-3);logNews('Treasury warning','The national treasury has entered deficit. Consider adjusting spending or revenue.');}
+ updateTop();selectCountry(state.country);saveGame(true);notify('Turn '+state.turn+' processed. Net treasury change: '+(net>=0?'+':'')+fmtB(net)+'.');
+}
+function saveGame(silent=false){try{localStorage.setItem('presidentialRealmSave',JSON.stringify(state));if(!silent)notify('Campaign saved on this device.')}catch(e){notify('Save failed: browser storage unavailable.')}}
+function loadGame(){try{let s=JSON.parse(localStorage.getItem('presidentialRealmSave'));if(!s)return notify('No saved campaign found.');Object.assign(state,s);updateTop();selectCountry(state.country);renderNews();goPage('overview');notify('Campaign loaded.')}catch(e){notify('Could not load the saved campaign.')}}
+function newCampaign(){if(!confirm('Start a new campaign? Your current autosave will be replaced.'))return;localStorage.removeItem('presidentialRealmSave');location.reload()}
+function boot(){
+ state.spending=state.health+state.education+state.infrastructure+state.industry+state.security;
+ logNews('New administration','The President has taken office. The first cabinet briefing is ready.');
+ updateTop();selectCountry(state.country);initMap();goPage('world');
+}
+boot();
+</script>
+</body></html>
